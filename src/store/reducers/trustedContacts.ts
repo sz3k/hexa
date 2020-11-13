@@ -2,7 +2,6 @@ import TrustedContactsService from '../../bitcoin/services/TrustedContactsServic
 import { SERVICES_ENRICHED } from '../actions/storage'
 import { TRUSTED_CONTACTS } from '../../common/constants/serviceTypes'
 import {
-  TRUSTED_CONTACT_INITIALIZED,
   TRUSTED_CONTACT_APPROVED,
   EPHEMERAL_CHANNEL_FETCHED,
   EPHEMERAL_CHANNEL_UPDATED,
@@ -12,34 +11,43 @@ import {
   CLEAR_PAYMENT_DETAILS,
   SWITCH_TC_LOADING,
   APPROVE_TRUSTED_CONTACT,
-} from '../actions/trustedContacts'
-import {
-  EphemeralData,
-  EphemeralDataElements,
-} from '../../bitcoin/utilities/Interface'
-import {
   UPDATE_ADDRESS_BOOK_LOCALLY,
   UPDATE_TRUSTED_CONTACT_INFO,
-} from '../constants'
-import { chain } from 'icepick'
+} from '../actions/trustedContacts'
+import {
+  EphemeralDataElements,
+} from '../../bitcoin/utilities/Interface'
+import { ContactRecipientDescribing } from '../../common/data/models/interfaces/RecipientDescribing'
 
-const initialState: {
+
+export type AddressBook = {
+  myKeepers: ContactRecipientDescribing[];
+  contactsKeptByUser: ContactRecipientDescribing[];
+  otherTrustedContacts: ContactRecipientDescribing[];
+  trustedContacts: ContactRecipientDescribing[];
+};
+
+
+export type TrustedContactsState = {
   service: TrustedContactsService;
-  serviceEnriched: Boolean;
-  initializedTrustedContacts: { [contactName: string]: { publicKey: string } }; //contact name to pubkey mapping
+
   approvedTrustedContacts: {
     [contactName: string]: {
       approved: Boolean;
     };
   };
+
   ephemeralChannel: {
     [contactName: string]: { updated: Boolean; data?: EphemeralDataElements };
   };
-  trustedChannel: { [contactName: string]: { updated: Boolean; data?: any } };
+
+  trustedChannel: { [contactName: string]: { updated: Boolean; data?: unknown } };
+
   paymentDetails: {
     address?: string;
     paymentURI?: string;
   };
+
   loading: {
     updateEphemeralChannel: Boolean;
     updateTrustedChannel: Boolean;
@@ -47,12 +55,16 @@ const initialState: {
     approvingTrustedContact: Boolean;
     walletCheckIn: Boolean;
   };
-  addressBook: any;
-  trustedContactsInfo: any;
-} = {
+
+  addressBook: AddressBook;
+  trustedContactsInfo: unknown;
+
+  trustedContactRecipients: ContactRecipientDescribing[];
+};
+
+
+const initialState: TrustedContactsState = {
   service: null,
-  serviceEnriched: false,
-  initializedTrustedContacts: null,
   approvedTrustedContacts: null,
   ephemeralChannel: null,
   trustedChannel: null,
@@ -66,26 +78,16 @@ const initialState: {
   },
   addressBook: null,
   trustedContactsInfo: null,
+  trustedContactRecipients: [],
 }
 
-export default ( state = initialState, action ) => {
+
+export default ( state: TrustedContactsState = initialState, action ) => {
   switch ( action.type ) {
       case SERVICES_ENRICHED:
         return {
           ...state,
           service: action.payload.services[ TRUSTED_CONTACTS ],
-          serviceEnriched: true,
-        }
-
-      case TRUSTED_CONTACT_INITIALIZED:
-        return {
-          ...state,
-          initializedTrustedContacts: {
-            ...state.initializedTrustedContacts,
-            [ action.payload.contactName ]: {
-              publicKey: action.payload.publicKey 
-            },
-          },
         }
 
       case APPROVE_TRUSTED_CONTACT:
@@ -182,12 +184,18 @@ export default ( state = initialState, action ) => {
         }
 
       case UPDATE_ADDRESS_BOOK_LOCALLY:
-        return chain( state ).setIn( [ 'addressBook' ], action.payload ).value()
+        return {
+          ...state,
+          addressBook: action.payload,
+        }
 
       case UPDATE_TRUSTED_CONTACT_INFO:
-        return chain( state )
-          .setIn( [ 'trustedContactsInfo' ], action.payload.trustedContactInfo )
-          .value()
+        return {
+          ...state,
+          trustedContactInfo: action.payload.trustedContactInfo,
+
+        // TODO: Compute `trustedContactRecipients` here
+        }
   }
 
   return state

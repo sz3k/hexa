@@ -67,10 +67,10 @@ interface FriendsAndFamilyStateTypes {
   isLoadContacts: boolean;
   selectedContact: any[];
   loading: boolean;
-  MyKeeper: any[];
-  IMKeeper: any[];
-  trustedContact: any[];
-  OtherTrustedContact: any[];
+  myKeepers: ContactRecipientDescribing[];
+  contactsKeptByUser: ContactRecipientDescribing[];
+  trustedContacts: ContactRecipientDescribing[];
+  otherTrustedContacts: ContactRecipientDescribing[];
   onRefresh: boolean;
   isShowingKnowMoreSheet: boolean;
   showLoader: boolean;
@@ -98,11 +98,11 @@ class FriendsAndFamilyScreen extends PureComponent<
       isLoadContacts: false,
       selectedContact: [],
       loading: true,
-      trustedContact: idx( props, ( _ ) => _.addressBookData.trustedContact ) || [],
-      MyKeeper: idx( props, ( _ ) => _.addressBookData.MyKeeper ) || [],
-      IMKeeper: idx( props, ( _ ) => _.addressBookData.IMKeeper ) || [],
-      OtherTrustedContact:
-        idx( props, ( _ ) => _.addressBookData.OtherTrustedContact ) || [],
+      trustedContacts: idx( props, ( _ ) => _.addressBookData.trustedContacts ) || [],
+      myKeepers: idx( props, ( _ ) => _.addressBookData.MyKeeper ) || [],
+      contactsKeptByUser: idx( props, ( _ ) => _.addressBookData.contactsKeptByUser ) || [],
+      otherTrustedContacts:
+        idx( props, ( _ ) => _.addressBookData.otherTrustedContacts ) || [],
       isShowingKnowMoreSheet: false,
       showLoader: false
     }
@@ -134,7 +134,7 @@ class FriendsAndFamilyScreen extends PureComponent<
     ) {
       this.updateAddressBook()
     }
-    if ( this.state.trustedContact ) {
+    if ( this.state.trustedContacts ) {
       this.setState( {
         loading: false,
       } )
@@ -160,7 +160,7 @@ class FriendsAndFamilyScreen extends PureComponent<
     const shouldShow = !this.state.isShowingKnowMoreSheet
 
     this.setState( {
-      isShowingKnowMoreSheet: shouldShow 
+      isShowingKnowMoreSheet: shouldShow
     }, () => {
       if ( shouldShow ) {
         this.helpBottomSheetRef.current?.snapTo( 1 )
@@ -172,10 +172,12 @@ class FriendsAndFamilyScreen extends PureComponent<
 
   updateAddressBook = async () => {
     const { regularAccount, trustedContactsService } = this.props
+
     const { trustedContactsInfo } = this.props
     const myKeepers = []
-    const imKeepers = []
-    const otherTrustedContact = []
+    const contactsKeptByUser = []
+    const otherTrustedContacts = []
+
     if ( trustedContactsInfo ) {
       if ( trustedContactsInfo.length ) {
         const trustedContacts = []
@@ -263,35 +265,29 @@ class FriendsAndFamilyScreen extends PureComponent<
             lastSeen,
             ...contactInfo,
           }
-          trustedContacts.push( element )
-          if ( element.isGuardian ) {
-            const isRemovable = !element.hasTrustedChannel ? true : false // un-confirmed guardians are removable
-            myKeepers.push( {
-              ...element, isRemovable 
-            } )
-          }
           if ( element.isWard ) {
-            imKeepers.push( element )
+            contactsKeptByUser.push( element )
           }
           if ( !element.isWard && !element.isGuardian ) {
-            otherTrustedContact.push( {
-              ...element, isRemovable: true 
+            otherTrustedContacts.push( {
+              ...element, isRemovable: true
             } )
           }
         }
+
         this.setState(
           {
-            MyKeeper: myKeepers,
-            IMKeeper: imKeepers,
-            OtherTrustedContact: otherTrustedContact,
-            trustedContact: trustedContacts,
+            myKeepers: myKeepers,
+            contactsKeptByUser,
+            otherTrustedContacts,
+            trustedContacts,
           },
           () =>
             this.props.updateAddressBookLocally( {
               MyKeeper: myKeepers,
-              IMKeeper: imKeepers,
-              OtherTrustedContact: otherTrustedContact,
-              trustedContact: trustedContacts,
+              contactsKeptByUser,
+              otherTrustedContacts,
+              trustedContacts,
             } ),
         )
       }
@@ -418,9 +414,9 @@ class FriendsAndFamilyScreen extends PureComponent<
     const { trustedChannelsSetupSync } = this.props
 
     const {
-      MyKeeper: contactsKeepingUser,
-      IMKeeper: contactsKeptByUser,
-      OtherTrustedContact: otherTrustedContacts,
+      myKeepers: contactsKeepingUser,
+      contactsKeptByUser: contactsKeptByUser,
+      otherTrustedContacts: otherTrustedContacts,
       onRefresh,
       showLoader
     } = this.state
@@ -437,11 +433,11 @@ class FriendsAndFamilyScreen extends PureComponent<
             />
           }
           style={{
-            flex: 1, marginBottom: hp( '6%' ) 
+            flex: 1, marginBottom: hp( '6%' )
           }}
         >
           <View style={{
-            marginTop: wp( '2%' ) 
+            marginTop: wp( '2%' )
           }}>
             <Text style={styles.pageTitle}>My Keepers</Text>
             <Text style={styles.pageInfoText}>
@@ -449,10 +445,10 @@ class FriendsAndFamilyScreen extends PureComponent<
             </Text>
 
             <View style={{
-              marginBottom: 15 
+              marginBottom: 15
             }}>
               <View style={{
-                height: 'auto' 
+                height: 'auto'
               }}>
                 {( contactsKeepingUser.length > 0 &&
                   contactsKeepingUser.map( ( item, index ) => {
@@ -466,14 +462,14 @@ class FriendsAndFamilyScreen extends PureComponent<
                       contactsType: 'My Keepers',
                     } )
                   } ) ) || <View style={{
-                  height: wp( '22%' ) + 30 
+                  height: wp( '22%' ) + 30
                 }} />}
               </View>
             </View>
           </View>
 
           <View style={{
-            marginTop: wp( '5%' ) 
+            marginTop: wp( '5%' )
           }}>
             <Text style={styles.pageTitle}>I am the Keeper of</Text>
             <Text style={styles.pageInfoText}>
@@ -481,10 +477,10 @@ class FriendsAndFamilyScreen extends PureComponent<
             </Text>
 
             <View style={{
-              marginBottom: 15 
+              marginBottom: 15
             }}>
               <View style={{
-                height: 'auto' 
+                height: 'auto'
               }}>
                 {( contactsKeptByUser.length > 0 &&
                   contactsKeptByUser.map( ( item, index ) => {
@@ -498,14 +494,14 @@ class FriendsAndFamilyScreen extends PureComponent<
                       contactsType: 'I\'m Keeper of',
                     } )
                   } ) ) || <View style={{
-                  height: wp( '22%' ) + 30 
+                  height: wp( '22%' ) + 30
                 }} />}
               </View>
             </View>
           </View>
 
           <View style={{
-            marginTop: wp( '5%' ) 
+            marginTop: wp( '5%' )
           }}>
             <Text style={styles.pageTitle}>Other Contacts</Text>
             <Text style={styles.pageInfoText}>
@@ -513,10 +509,10 @@ class FriendsAndFamilyScreen extends PureComponent<
             </Text>
 
             <View style={{
-              marginBottom: 15 
+              marginBottom: 15
             }}>
               <View style={{
-                height: 'auto' 
+                height: 'auto'
               }}>
                 {( otherTrustedContacts.length > 0 &&
                   otherTrustedContacts.map( ( item, index ) => {
@@ -530,7 +526,7 @@ class FriendsAndFamilyScreen extends PureComponent<
                       contactsType: 'Other Contacts',
                     } )
                   } ) ) || <View style={{
-                  height: wp( '22%' ) + 30 
+                  height: wp( '22%' ) + 30
                 }} />}
 
                 <TouchableOpacity
@@ -598,7 +594,7 @@ class FriendsAndFamilyScreen extends PureComponent<
           renderHeader={this.renderHelpHeader}
           onCloseEnd={() => {
             this.setState( {
-              isShowingKnowMoreSheet: false 
+              isShowingKnowMoreSheet: false
             } )
           }}
         />
@@ -613,6 +609,7 @@ const mapStateToProps = ( state ) => {
     state,
     ( _ ) => _.trustedContacts.trustedContactsInfo,
   )
+
   return {
     regularAccount: idx( state, ( _ ) => _.accounts[ REGULAR_ACCOUNT ].service ),
     trustedContactsService: idx( state, ( _ ) => _.trustedContacts.service ),
@@ -624,6 +621,7 @@ const mapStateToProps = ( state ) => {
     trustedContactsInfo,
   }
 }
+
 export default connect( mapStateToProps, {
   trustedChannelsSetupSync,
   updateAddressBookLocally,

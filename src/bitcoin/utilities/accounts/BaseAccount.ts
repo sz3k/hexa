@@ -8,6 +8,7 @@ import {
   DerivativeAccounts,
   TransactionDetails,
   TransactionPrerequisite,
+  ScannedAddressKind,
 } from '../Interface'
 
 export default class BaseAccount {
@@ -78,7 +79,7 @@ export default class BaseAccount {
       }
     } catch ( err ) {
       return {
-        status: 101, err: err.message, message: ErrMap[ 101 ] 
+        status: 101, err: err.message, message: ErrMap[ 101 ]
       }
     }
   };
@@ -105,7 +106,7 @@ export default class BaseAccount {
       }
     } catch ( err ) {
       return {
-        status: 102, err: err.message, message: ErrMap[ 102 ] 
+        status: 102, err: err.message, message: ErrMap[ 102 ]
       }
     }
   };
@@ -139,7 +140,7 @@ export default class BaseAccount {
   public addressDiff = (
     scannedStr: string,
   ): {
-    type: string;
+      type: ScannedAddressKind | null;
   } => this.hdWallet.addressDiff( scannedStr );
 
   public getReceivingAddress = (
@@ -536,7 +537,7 @@ export default class BaseAccount {
       }
     } catch ( err ) {
       return {
-        status: 0o1, err: err.message, message: ErrMap[ 0o1 ] 
+        status: 0o1, err: err.message, message: ErrMap[ 0o1 ]
       }
     }
   };
@@ -589,7 +590,7 @@ export default class BaseAccount {
       }
     } catch ( err ) {
       return {
-        status: 0o3, err: err.message, message: ErrMap[ 0o3 ] 
+        status: 0o3, err: err.message, message: ErrMap[ 0o3 ]
       }
     }
   };
@@ -617,7 +618,7 @@ export default class BaseAccount {
       }
     } catch ( err ) {
       return {
-        status: 0o4, err: err.message, message: ErrMap[ 0o4 ] 
+        status: 0o4, err: err.message, message: ErrMap[ 0o4 ]
       }
     }
   };
@@ -648,7 +649,7 @@ export default class BaseAccount {
       }
     } catch ( err ) {
       return {
-        status: 0o5, err: err.message, message: ErrMap[ 0o5 ] 
+        status: 0o5, err: err.message, message: ErrMap[ 0o5 ]
       }
     }
   };
@@ -738,7 +739,7 @@ export default class BaseAccount {
         return {
           status: config.STATUS.SUCCESS,
           data: {
-            txPrerequisites 
+            txPrerequisites
           },
         }
       } else {
@@ -752,7 +753,7 @@ export default class BaseAccount {
       // }
     } catch ( err ) {
       return {
-        status: 106, err: err.message, message: ErrMap[ 106 ] 
+        status: 106, err: err.message, message: ErrMap[ 106 ]
       }
     }
   };
@@ -808,8 +809,8 @@ export default class BaseAccount {
       // console.log({ txid });
       return {
         status: config.STATUS.SUCCESS, data: {
-          txid 
-        } 
+          txid
+        }
       }
     } catch ( err ) {
       return {

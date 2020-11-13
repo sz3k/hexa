@@ -60,18 +60,11 @@ import RadioButton from '../../../components/RadioButton'
 import CustomPriorityContent from '../CustomPriorityContent'
 import CurrencyKind from '../../../common/data/enums/CurrencyKind'
 import Loader from '../../../components/loader'
-import {
-  RecipientDescribing,
-  makeSubAccountRecipientDescription,
-  makeContactRecipientDescription,
-} from '../../../common/data/models/interfaces/RecipientDescribing'
 import ConfirmedRecipientCarouselItem from '../../../components/send/ConfirmedRecipientCarouselItem'
 import { resetStackToAccountDetails } from '../../../navigation/actions/NavigationActions'
 import { SATOSHIS_IN_BTC } from '../../../common/constants/Bitcoin'
-import { processRecipients } from '../../../store/sagas/accounts'
-import { AccountsState } from '../../../store/reducers/accounts'
-import { NodeSettingsState } from '../../../store/reducers/nodeSettings'
-import { getAccountIcon, getAccountTitle } from './utils'
+import { RecipientDescribing } from '../../../common/data/models/interfaces/RecipientDescribing'
+import { makeAccountRecipientDescriptionFromUnknownData, makeContactRecipientDescription } from '../../../utils/sending/RecipientFactories'
 
 interface SendConfirmationStateTypes {
   selectedRecipients: unknown[];
@@ -177,7 +170,7 @@ class SendConfirmation extends Component<
         totalAmount += parseInt( item.bitcoinAmount )
       } )
       if ( totalAmount ) this.setState( {
-        totalAmount: totalAmount 
+        totalAmount: totalAmount
       } )
     }
     this.setState( {
@@ -185,6 +178,7 @@ class SendConfirmation extends Component<
       selectedRecipients: accounts[ this.serviceType ].transfer.details,
       loading: accounts[ this.serviceType ].loading,
     } )
+
     this.onChangeInTransfer()
     this.setCurrencyCodeFromAsync()
   };
@@ -192,7 +186,7 @@ class SendConfirmation extends Component<
   componentDidUpdate = ( prevProps ) => {
     if ( prevProps.exchangeRates !== this.props.exchangeRates ) {
       this.setState( {
-        exchangeRates: this.props.exchangeRates 
+        exchangeRates: this.props.exchangeRates
       } )
     }
 
@@ -213,7 +207,7 @@ class SendConfirmation extends Component<
       this.props.accounts[ this.serviceType ].loading
     ) {
       this.setState( {
-        loading: this.props.accounts[ this.serviceType ].loading 
+        loading: this.props.accounts[ this.serviceType ].loading
       } )
     }
   };
@@ -249,19 +243,20 @@ class SendConfirmation extends Component<
 
   onChangeInTransfer = () => {
     const { transfer } = this.state
+
     if ( transfer.details ) {
       let totalAmount = 0
       transfer.details.map( ( item ) => {
         totalAmount += parseInt( item.bitcoinAmount )
       } )
       if ( totalAmount ) this.setState( {
-        totalAmount: totalAmount 
+        totalAmount: totalAmount
       } )
     }
 
     if ( transfer.stage2 && transfer.stage2.failed ) {
       this.setState( {
-        isConfirmDisabled: false, showLoader: false 
+        isConfirmDisabled: false, showLoader: false
       } )
       setTimeout( () => {
         ( this.refs.SendUnSuccessBottomSheet as any ).snapTo( 1 )
@@ -278,8 +273,8 @@ class SendConfirmation extends Component<
       }
 
       this.sendNotifications()
-
       this.storeTrustedContactsHistory( transfer.details )
+
       if ( this.state.derivativeAccountDetails ) {
         if ( this.state.derivativeAccountDetails.type === DONATION_ACCOUNT )
           this.props.syncViaXpubAgent(
@@ -304,21 +299,25 @@ class SendConfirmation extends Component<
         } )
       }
       this.setState( {
-        showLoader: false 
+        showLoader: false
       } )
 
       setTimeout( () => {
         ( this.refs.SendSuccessBottomSheet as any ).snapTo( 1 )
       }, 10 )
+
     } else if ( !transfer.txid && transfer.executed === 'ST2' ) {
-      this.setState( {
-        showLoader: false 
-      } )
+      // 📝 The idea seems to be that this code is reached when an "ST2" send has failed.
+
       this.props.navigation.navigate( 'TwoFAToken', {
         serviceType: this.serviceType,
         recipientAddress: '',
         onTransactionSuccess: this.onTransactionSuccess,
       } )
+
+      // presentBottomSheet(
+      //   // <OTPAuthenticationSheet
+      // )
     }
   };
 
@@ -393,7 +392,7 @@ class SendConfirmation extends Component<
         ( output ) => output.address,
       )
     }
-   
+
     const customTxPrerequisites = service.calculateCustomFee(
       outputs,
       parseInt( amount ),
@@ -467,15 +466,15 @@ class SendConfirmation extends Component<
         const location = ( evt.nativeEvent.locationX - px ) / width
         if ( location >= -0.1 && location <= 0.2 ) {
           this.setState( {
-            sliderValue: 0 
+            sliderValue: 0
           } )
         } else if ( location >= 0.3 && location <= 0.6 ) {
           this.setState( {
-            sliderValue: 5 
+            sliderValue: 5
           } )
         } else if ( location >= 0.7 && location <= 1 ) {
           this.setState( {
-            sliderValue: 10 
+            sliderValue: 10
           } )
         }
       } )
@@ -545,15 +544,15 @@ class SendConfirmation extends Component<
 
     return (
       <View style={{
-        flex: 1 
+        flex: 1
       }}>
         <SafeAreaView style={{
-          flex: 0 
+          flex: 0
         }} />
         <StatusBar backgroundColor={Colors.white} barStyle="dark-content" />
         <View style={styles.modalHeaderTitleView}>
           <View style={{
-            flex: 1, flexDirection: 'row', alignItems: 'center' 
+            flex: 1, flexDirection: 'row', alignItems: 'center'
           }}>
             <TouchableOpacity
               onPress={() => {
@@ -561,10 +560,10 @@ class SendConfirmation extends Component<
                 this.props.clearTransfer( this.serviceType, 'stage1' )
               }}
               hitSlop={{
-                top: 20, left: 20, bottom: 20, right: 20 
+                top: 20, left: 20, bottom: 20, right: 20
               }}
               style={{
-                height: 30, width: 30, justifyContent: 'center' 
+                height: 30, width: 30, justifyContent: 'center'
               }}
               disabled={isConfirmDisabled}
             >
@@ -579,11 +578,11 @@ class SendConfirmation extends Component<
                 getAccountIcon( this.serviceType,   this.state.derivativeAccountDetails )
               }
               style={{
-                width: wp( '10%' ), height: wp( '10%' ) 
+                width: wp( '10%' ), height: wp( '10%' )
               }}
             />
             <View style={{
-              marginLeft: wp( '2.5%' ) 
+              marginLeft: wp( '2.5%' )
             }}>
               <Text style={styles.modalHeaderTitleText}>
                 {'Send Confirmation'}
@@ -597,7 +596,7 @@ class SendConfirmation extends Component<
                 ( this.refs.KnowMoreBottomSheet as any ).snapTo( 1 )
               }}
               style={{
-                marginLeft: 'auto' 
+                marginLeft: 'auto'
               }}
             >
               <Text
@@ -692,14 +691,14 @@ class SendConfirmation extends Component<
           <FlatList
             horizontal
             contentContainerStyle={{
-              paddingVertical: 16 
+              paddingVertical: 16
             }}
             // data={this.recipients}
             data={selectedRecipients}
             keyExtractor={( item ) => item.id}
             showsHorizontalScrollIndicator={false}
             contentOffset={{
-              x: -14, y: 0 
+              x: -14, y: 0
             }}
             renderItem={( { item }: { item: unknown } ) => {
               const selectedContactData = {
@@ -726,7 +725,7 @@ class SendConfirmation extends Component<
               // 🔑 This seems to be the way the backend is distinguishing between
               // accounts and contacts.
               if ( selectedContactData.account_name != null ) {
-                recipient = makeSubAccountRecipientDescription(
+                recipient = makeAccountRecipientDescriptionFromUnknownData(
                   selectedContactData,
                   accountKind,
                 )
@@ -739,7 +738,7 @@ class SendConfirmation extends Component<
               return (
                 <ConfirmedRecipientCarouselItem
                   containerStyle={{
-                    marginHorizontal: 14 
+                    marginHorizontal: 14
                   }}
                   recipient={recipient}
                   accountKind={accountKind}
@@ -790,7 +789,7 @@ class SendConfirmation extends Component<
 
               <View style={styles.priorityTableHeadingContainer}>
                 <View style={{
-                  flex: 1, paddingLeft: 10 
+                  flex: 1, paddingLeft: 10
                 }}>
                   <Text style={styles.tableHeadingText}>Priority</Text>
                 </View>
@@ -800,7 +799,7 @@ class SendConfirmation extends Component<
                 <View style={styles.priorityDataContainer}>
                   <Text
                     style={{
-                      ...styles.tableHeadingText, textAlign: 'center' 
+                      ...styles.tableHeadingText, textAlign: 'center'
                     }}
                   >
                   Total Fee
@@ -823,7 +822,7 @@ class SendConfirmation extends Component<
                       onpress={() => this.onPrioritySelect( 'High Fee' )}
                     />
                     <Text style={{
-                      ...styles.priorityTableText, marginLeft: 10 
+                      ...styles.priorityTableText, marginLeft: 10
                     }}>
                     High
                     </Text>
@@ -871,7 +870,7 @@ class SendConfirmation extends Component<
                       onpress={() => this.onPrioritySelect( 'Medium Fee' )}
                     />
                     <Text style={{
-                      ...styles.priorityTableText, marginLeft: 10 
+                      ...styles.priorityTableText, marginLeft: 10
                     }}>
                     Medium
                     </Text>
@@ -924,7 +923,7 @@ class SendConfirmation extends Component<
                     onpress={() => this.onPrioritySelect( 'Low Fee' )}
                   />
                   <Text style={{
-                    ...styles.priorityTableText, marginLeft: 10 
+                    ...styles.priorityTableText, marginLeft: 10
                   }}>
                   Low
                   </Text>
@@ -961,7 +960,7 @@ class SendConfirmation extends Component<
                   </Text>
                 </View>
               </View>
-            </View>} 
+            </View>}
 
             {this.state.customFeePerByte !== '' && (
               <View
@@ -984,7 +983,7 @@ class SendConfirmation extends Component<
                     onpress={() => this.onPrioritySelect( 'Custom Fee' )}
                   />
                   <Text style={{
-                    ...styles.priorityTableText, marginLeft: 10 
+                    ...styles.priorityTableText, marginLeft: 10
                   }}>
                     Custom
                   </Text>
@@ -1054,7 +1053,7 @@ class SendConfirmation extends Component<
             <TouchableOpacity
               onPress={() => {
                 this.setState( {
-                  isConfirmDisabled: true, showLoader: true 
+                  isConfirmDisabled: true, showLoader: true
                 } )
                 this.onConfirm()
               }}
@@ -1068,7 +1067,7 @@ class SendConfirmation extends Component<
                 shadowColor: Colors.shadowBlue,
                 shadowOpacity: 1,
                 shadowOffset: {
-                  width: 15, height: 15 
+                  width: 15, height: 15
                 },
               }}
             >
@@ -1093,7 +1092,7 @@ class SendConfirmation extends Component<
               }}
             >
               <Text style={{
-                ...styles.buttonText, color: Colors.blue 
+                ...styles.buttonText, color: Colors.blue
               }}>
                 Back
               </Text>

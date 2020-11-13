@@ -4,7 +4,7 @@ import * as bip32 from 'bip32'
 import Client from 'bitcoin-core'
 import * as bitcoinJS from 'bitcoinjs-lib'
 import config from '../../HexaConfig'
-import { Transactions } from '../Interface'
+import { Transactions, ScannedAddressKind } from '../Interface'
 import {
   SUB_PRIMARY_ACCOUNT,
   TRUSTED_CONTACTS,
@@ -15,7 +15,7 @@ const { API_URLS, REQUEST_TIMEOUT } = config
 const { TESTNET, MAINNET } = API_URLS
 
 const bitcoinAxios = axios.create( {
-  timeout: REQUEST_TIMEOUT 
+  timeout: REQUEST_TIMEOUT
 } )
 export default class Bitcoin {
   public static networkType = ( scannedStr: string ) => {
@@ -327,8 +327,8 @@ export default class Bitcoin {
           }
         }
 
-      // sort transactions(lastest first) 
-      transactions.transactionDetails.sort( ( tx1, tx2 ) => { 
+      // sort transactions(lastest first)
+      transactions.transactionDetails.sort( ( tx1, tx2 ) => {
         return tx2.blockTime - tx1.blockTime
       } )
 
@@ -344,7 +344,7 @@ export default class Bitcoin {
       //  `An error occurred while fetching balance-txnn via Esplora: ${err.response.data.err}`,
       //);
       console.log( {
-        err 
+        err
       } )
       throw new Error( 'Fetching balance-txn by addresses failed' )
     }
@@ -584,7 +584,7 @@ export default class Bitcoin {
         const res: AxiosResponse = await bitcoinAxios.post(
           config.ESPLORA_API_ENDPOINTS.TESTNET.MULTIUTXO,
           {
-            addresses 
+            addresses
           },
         )
         data = res.data
@@ -592,7 +592,7 @@ export default class Bitcoin {
         const res: AxiosResponse = await bitcoinAxios.post(
           config.ESPLORA_API_ENDPOINTS.MAINNET.MULTIUTXO,
           {
-            addresses 
+            addresses
           },
         )
         data = res.data
@@ -611,7 +611,7 @@ export default class Bitcoin {
         }
       }
       return {
-        UTXOs 
+        UTXOs
       }
     } catch ( err ) {
       // console.log(`An error occurred while connecting to Esplora: ${err}`);
@@ -620,7 +620,7 @@ export default class Bitcoin {
       try {
         const UTXOs = await this.blockcypherUTXOFallback( addresses )
         return {
-          UTXOs 
+          UTXOs
         }
       } catch ( err ) {
         // console.log(
@@ -689,21 +689,23 @@ export default class Bitcoin {
 
   public addressDiff = (
     scannedStr: string,
-  ): {
-    type: string;
-  } => {
+  ): { type: ScannedAddressKind | null } => {
     if ( this.isPaymentURI( scannedStr ) ) {
       const { address } = this.decodePaymentURI( scannedStr )
-      if ( this.isValidAddress( address ) ) return {
-        type: 'paymentURI' 
+
+      if ( this.isValidAddress( address ) ) {
+        return {
+          type: ScannedAddressKind.PAYMENT_URI
+        }
       }
     } else if ( this.isValidAddress( scannedStr ) ) {
       return {
-        type: 'address' 
+        type: ScannedAddressKind.ADDRESS
       }
     }
+
     return {
-      type: null 
+      type: null
     }
   };
 
@@ -721,7 +723,7 @@ export default class Bitcoin {
           txHex,
           {
             headers: {
-              'Content-Type': 'text/plain' 
+              'Content-Type': 'text/plain'
             },
           },
         )
@@ -731,13 +733,13 @@ export default class Bitcoin {
           txHex,
           {
             headers: {
-              'Content-Type': 'text/plain' 
+              'Content-Type': 'text/plain'
             },
           },
         )
       }
       return {
-        txid: res.data 
+        txid: res.data
       }
     } catch( err ){
       console.log(
@@ -753,7 +755,7 @@ export default class Bitcoin {
               txHex,
               {
                 headers: {
-                  'Content-Type': 'text/plain' 
+                  'Content-Type': 'text/plain'
                 },
               },
             )
@@ -763,20 +765,20 @@ export default class Bitcoin {
               txHex,
               {
                 headers: {
-                  'Content-Type': 'text/plain' 
+                  'Content-Type': 'text/plain'
                 },
               },
             )
           }
           return {
-            txid: res.data 
+            txid: res.data
           }
         } catch ( err ) {
         // console.log(err.message);
           throw new Error( 'Transaction broadcasting failed' )
         }
-      } 
-    } 
+      }
+    }
   };
 
   public fromOutputScript = ( output: Buffer ): string => {
@@ -789,11 +791,11 @@ export default class Bitcoin {
   ): { paymentURI: string } => {
     if ( options ) {
       return {
-        paymentURI: bip21.encode( address, options ) 
+        paymentURI: bip21.encode( address, options )
       }
     } else {
       return {
-        paymentURI: bip21.encode( address ) 
+        paymentURI: bip21.encode( address )
       }
     }
   };
