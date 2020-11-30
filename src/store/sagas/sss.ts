@@ -1900,7 +1900,7 @@ function* updateWalletImageWorker() {
   }
 
   // console.log( {
-  //   walletImage 
+  //   walletImage
   // } )
 
   if ( Object.keys( walletImage ).length === 0 ) {
@@ -1990,7 +1990,7 @@ function* fetchWalletImageWorker( { payload } ) {
         if( !STATE_DATA[ key ] ) continue
 
         switch( key ){
-            case 'accountShells': 
+            case 'accountShells':
               const accountShells: AccountShell[] = JSON.parse( STATE_DATA[ key ] )
               yield put( restoredAccountShells( {
                 accountShells
@@ -1999,7 +1999,7 @@ function* fetchWalletImageWorker( { payload } ) {
 
             case 'activePersonalNode':
               const activePersonalNode: PersonalNode = JSON.parse( STATE_DATA[ key ] )
-              yield put( restorePersonalNodeConfiguration( 
+              yield put( restorePersonalNodeConfiguration(
                 activePersonalNode
               ) )
               break

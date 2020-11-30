@@ -48,7 +48,7 @@ import config from '../../bitcoin/HexaConfig';
 import KnowMoreButton from '../../components/KnowMoreButton';
 import {
   updateEphemeralChannel,
-  updateTrustedContactInfoLocally,
+  updateTrustedContactsInfoLocally,
 } from '../../store/actions/trustedContacts';
 import SmallHeaderModal from '../../components/SmallHeaderModal';
 import FriendsAndFamilyHelpContents from '../../components/Helper/FriendsAndFamilyHelpContents';
@@ -772,7 +772,7 @@ const TrustedContactHistory = (props) => {
       }
       await AsyncStorage.setItem('TrustedContactsInfo', JSON.stringify(tcInfo));
 
-      dispatch(updateTrustedContactInfoLocally(tcInfo));
+      dispatch(updateTrustedContactsInfoLocally(tcInfo));
     },
     [index, trustedContactsInfo],
   );
