@@ -1,6 +1,6 @@
-import TrustedContactsService from '../../bitcoin/services/TrustedContactsService'
-import { SERVICES_ENRICHED } from '../actions/storage'
-import { TRUSTED_CONTACTS } from '../../common/constants/serviceTypes'
+import TrustedContactsService from '../../bitcoin/services/TrustedContactsService';
+import { SERVICES_ENRICHED } from '../actions/storage';
+import { TRUSTED_CONTACTS } from '../../common/constants/wallet-service-types';
 import {
   TRUSTED_CONTACT_APPROVED,
   EPHEMERAL_CHANNEL_FETCHED,
@@ -12,14 +12,6 @@ import {
   SWITCH_TC_LOADING,
   APPROVE_TRUSTED_CONTACT,
   UPDATE_ADDRESS_BOOK_LOCALLY,
-<<<<<<< HEAD
-  UPDATE_TRUSTED_CONTACT_INFO,
-} from '../actions/trustedContacts'
-import {
-  EphemeralDataElements,
-} from '../../bitcoin/utilities/Interface'
-import { ContactRecipientDescribing } from '../../common/data/models/interfaces/RecipientDescribing'
-=======
   UPDATE_TRUSTED_CONTACTS_INFO,
 } from '../actions/trustedContacts';
 import {
@@ -39,7 +31,6 @@ type TrustedContactInfo = {
   imageAvailable: boolean;
   image?: ImageSourcePropType;
 } & Record<string, unknown>;
->>>>>>> ee1e40c1... First pass at strongly-typed `trustedContactsInfo` for use with recipients.
 
 
 export type AddressBook = {
@@ -101,40 +92,6 @@ const initialState: TrustedContactsState = {
   addressBook: null,
   trustedContactsInfo: [],
   trustedContactRecipients: [],
-<<<<<<< HEAD
-}
-
-
-export default ( state: TrustedContactsState = initialState, action ) => {
-  switch ( action.type ) {
-      case SERVICES_ENRICHED:
-        return {
-          ...state,
-          service: action.payload.services[ TRUSTED_CONTACTS ],
-        }
-
-      case APPROVE_TRUSTED_CONTACT:
-        return {
-          ...state,
-          loading: {
-            ...state.loading,
-            approvingTrustedContact: true,
-          },
-        }
-
-      case TRUSTED_CONTACT_APPROVED:
-        return {
-          ...state,
-          approvedTrustedContacts: {
-            ...state.approvedTrustedContacts,
-            [ action.payload.contactName ]: {
-              approved: action.payload.approved,
-            },
-          },
-          loading: {
-            ...state.loading,
-            approvingTrustedContact: false,
-=======
 };
 
 
@@ -167,7 +124,6 @@ export default (state: TrustedContactsState = initialState, action): TrustedCont
           ...state.approvedTrustedContacts,
           [action.payload.contactName]: {
             approved: action.payload.approved,
->>>>>>> ee1e40c1... First pass at strongly-typed `trustedContactsInfo` for use with recipients.
           },
         }
 
@@ -215,49 +171,6 @@ export default (state: TrustedContactsState = initialState, action): TrustedCont
               data: action.payload.data,
             },
           },
-<<<<<<< HEAD
-        }
-
-      case PAYMENT_DETAILS_FETCHED:
-        return {
-          ...state,
-          paymentDetails: action.payload.paymentDetails,
-        }
-
-      case CLEAR_PAYMENT_DETAILS:
-        return {
-          ...state,
-          paymentDetails: null,
-        }
-
-      case SWITCH_TC_LOADING:
-        return {
-          ...state,
-          loading: {
-            ...state.loading,
-            [ action.payload.beingLoaded ]: !state.loading[
-              action.payload.beingLoaded
-            ],
-          },
-        }
-
-      case UPDATE_ADDRESS_BOOK_LOCALLY:
-        return {
-          ...state,
-          addressBook: action.payload,
-        }
-
-      case UPDATE_TRUSTED_CONTACT_INFO:
-        return {
-          ...state,
-          trustedContactInfo: action.payload.trustedContactInfo,
-
-        // TODO: Compute `trustedContactRecipients` here
-        }
-  }
-
-  return state
-=======
         },
       };
 
@@ -390,5 +303,4 @@ function reduceTCInfoIntoRecipientDescriptions({
       contactRecipient,
     ];
   }, []);
->>>>>>> ee1e40c1... First pass at strongly-typed `trustedContactsInfo` for use with recipients.
 }

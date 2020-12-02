@@ -42,8 +42,7 @@ import {
   TEST_ACCOUNT,
   SECURE_ACCOUNT,
   DONATION_ACCOUNT,
-  WYRE,
-} from '../../../common/constants/serviceTypes'
+} from '../../../common/constants/wallet-service-types'
 import RelayServices from '../../../bitcoin/services/RelayService'
 import {
   INotification,

@@ -36,9 +36,7 @@ import SubAccountKind from '../../../common/data/enums/SubAccountKind'
 import useAccountsState from '../../../utils/hooks/state-selectors/accounts/UseAccountsState'
 import { Button } from 'react-native-elements'
 import DonationWebPageBottomSheet from '../../../components/bottom-sheets/DonationWebPageBottomSheet'
-import { DONATION_ACCOUNT, SECURE_ACCOUNT } from '../../../common/constants/serviceTypes'
-import TransactionsPreviewSection from './TransactionsPreviewSection'
-import { ExternalServiceSubAccountDescribing } from '../../../common/data/models/SubAccountInfo/Interfaces'
+import { DONATION_ACCOUNT } from '../../../common/constants/wallet-service-types'
 
 export type Props = {
   navigation: any;

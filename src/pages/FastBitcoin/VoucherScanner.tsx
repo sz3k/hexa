@@ -13,24 +13,21 @@ import {
   Linking,
   TextInput,
   KeyboardAvoidingView,
-  Keyboard,
 } from 'react-native'
 import Fonts from '../../common/Fonts'
 import DeviceInfo from 'react-native-device-info'
 import NavStyles from '../../common/Styles/NavStyles'
-import CommonStyles from '../../common/Styles/Styles'
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen'
-import BottomInfoBox from '../../components/BottomInfoBox'
 import {
   SECURE_ACCOUNT,
   TEST_ACCOUNT,
   REGULAR_ACCOUNT,
   FAST_BITCOINS,
   TRUSTED_CONTACTS,
-} from '../../common/constants/serviceTypes'
+} from '../../common/constants/wallet-service-types'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import Entypo from 'react-native-vector-icons/Entypo'
 import Colors from '../../common/Colors'
@@ -56,7 +53,6 @@ import {
   getQuoteFail,
   executeOrderFail,
   storeFbtcData,
-  storeFbtcVoucher,
   clearFbtcVoucher,
 } from '../../store/actions/fbtc'
 import { fetchDerivativeAccAddress } from '../../store/actions/accounts'
@@ -67,7 +63,6 @@ import Toast from '../../components/Toast'
 import moment from 'moment'
 import { isEmpty } from '../../common/CommonFunctions'
 import AccountShell from '../../common/data/models/AccountShell'
-import SourceAccountKind from '../../common/data/enums/SourceAccountKind'
 import SubAccountKind from '../../common/data/enums/SubAccountKind'
 
 const VoucherScanner = ( props ) => {
@@ -81,12 +76,11 @@ const VoucherScanner = ( props ) => {
     : ''
   const [ bitcoinAddress, setBitcoinAddress ] = useState( '' )
   const QuoteDetails = useSelector( ( state ) => state.fbtc.getQuoteDetails )
-  const currencyCode = useSelector( ( state ) => state.preferences.currencyCode )
   const executeOrderDetails = useSelector(
     ( state ) => state.fbtc.executeOrderDetails,
   )
   const [ hideShow, setHideShow ] = useState( false )
-  const [ temp, setTemp ] = useState( true )
+  const [ ] = useState( true )
   const [ isUserRegistered, setIsUserRegistered ] = useState( false )
   const [ openCameraFlag, setOpenCameraFlag ] = useState( false )
   const [ voucherCode, setVoucherCode ] = useState( '' )
@@ -104,14 +98,14 @@ const VoucherScanner = ( props ) => {
   const executeOrderFailMessage = useSelector(
     ( state ) => state.fbtc.accountSyncFailMessage,
   )
-  const [ exchangeRates, setExchangeRates ] = useState( accounts1.exchangeRates )
+  const [ , setExchangeRates ] = useState( accounts1.exchangeRates )
   const dispatch = useDispatch()
   const accountSyncDetails = useSelector(
     ( state ) => state.fbtc.accountSyncDetails,
   )
   const [ errorTitle, setErrorTitle ] = useState( '' )
-  const [ errorInfo, setErrorInfo ] = useState( '' )
-  const [ errorNote, setErrorNote ] = useState( '' )
+  const [ errorInfo ] = useState( '' )
+  const [ errorNote ] = useState( '' )
   const [ errorProccedButtonText, setErrorProccedButtonText ] = useState( '' )
   const [ showLoader, setShowLoader ] = useState( false )
   const FBTCAccountData = useSelector( ( state ) => state.fbtc.FBTCAccountData )
@@ -127,23 +121,20 @@ const VoucherScanner = ( props ) => {
     secureBalance: 0,
   } )
 
-  const [ ErrorModalBottomSheet, setErrorModalBottomSheet ] = useState(
+  const [ ErrorModalBottomSheet ] = useState(
     React.createRef<BottomSheet>(),
   )
   const [
     RegistrationSuccessBottomSheet,
-    setRegistrationSuccessBottomSheet,
   ] = useState( React.createRef<BottomSheet>() )
-  const [ QuoteBottomSheet, setQuoteBottomSheet ] = useState(
+  const [ QuoteBottomSheet ] = useState(
     React.createRef<BottomSheet>(),
   )
   const [
     VoucherRedeemSuccessBottomSheet,
-    setVoucherRedeemSuccessBottomSheet,
   ] = useState( React.createRef<BottomSheet>() )
   const [
     AccountVerificationBottomSheet,
-    setAccountVerificationBottomSheet,
   ] = useState( React.createRef<BottomSheet>() )
   const [ Quote, setQuote ] = useState( {
   } )
@@ -193,7 +184,7 @@ const VoucherScanner = ( props ) => {
     return ref.current
   }
   const prevFBTCAccount_Data = usePrevious( {
-    FBTCAccount_Data 
+    FBTCAccount_Data
   } )
 
   useEffect( () => {
@@ -342,9 +333,6 @@ const VoucherScanner = ( props ) => {
           await AsyncStorage.setItem(
             'voucherData',
             JSON.stringify( voucherDataTemp ),
-          )
-          const voucherDataAfterAdd = JSON.parse(
-            await AsyncStorage.getItem( 'voucherData' ),
           )
           // console.log("voucherDataAfterAdd",voucherDataAfterAdd);
         } )()
@@ -532,7 +520,7 @@ const VoucherScanner = ( props ) => {
             setShowLoader( false )
           }, 2 );
           ( RegistrationSuccessBottomSheet as any ).current.snapTo( 1 )
-          
+
           dispatch( ClearAccountSyncData() )
         }
       } )()
@@ -949,22 +937,22 @@ const VoucherScanner = ( props ) => {
 
   return (
     <View style={{
-      flex: 1 
+      flex: 1
     }}>
       <SafeAreaView style={{
-        flex: 0 
+        flex: 0
       }} />
       <StatusBar backgroundColor={Colors.white} barStyle="dark-content" />
       <View style={NavStyles.modalHeaderTitleView}>
         <View style={{
-          flex: 1, flexDirection: 'row', alignItems: 'center' 
+          flex: 1, flexDirection: 'row', alignItems: 'center'
         }}>
           <TouchableOpacity
             onPress={() => {
               props.navigation.goBack()
             }}
             hitSlop={{
-              top: 20, left: 20, bottom: 20, right: 20 
+              top: 20, left: 20, bottom: 20, right: 20
             }}
             style={styles.backArrowView}
           >
@@ -977,16 +965,16 @@ const VoucherScanner = ( props ) => {
       </View>
       <KeyboardAvoidingView
         style={{
-          flex: 1, paddingTop: wp( '5%' ), position: 'relative' 
+          flex: 1, paddingTop: wp( '5%' ), position: 'relative'
         }}
         behavior={Platform.OS == 'ios' ? 'padding' : ''}
         enabled
       >
         <ScrollView style={{
-          flex: 1 
+          flex: 1
         }}>
           <View style={{
-            height: '100%' 
+            height: '100%'
           }}>
             {openCameraFlag ? (
               <View style={styles.cameraView}>
@@ -997,7 +985,7 @@ const VoucherScanner = ( props ) => {
                   captureAudio={false}
                 >
                   <View style={{
-                    flex: 1 
+                    flex: 1
                   }}>
                     <View style={styles.topCornerView}>
                       <View style={styles.topLeftCornerView} />
@@ -1014,7 +1002,7 @@ const VoucherScanner = ( props ) => {
               <TouchableOpacity
                 onPress={() => setOpenCameraFlag( true )}
                 style={{
-                  alignSelf: 'center' 
+                  alignSelf: 'center'
                 }}
               >
                 <ImageBackground
@@ -1022,7 +1010,7 @@ const VoucherScanner = ( props ) => {
                   style={styles.cameraImage}
                 >
                   <View style={{
-                    flex: 1 
+                    flex: 1
                   }}>
                     <View style={styles.topCornerView}>
                       <View style={styles.topLeftCornerView} />
@@ -1074,12 +1062,12 @@ const VoucherScanner = ( props ) => {
                     <Image
                       source={value.image}
                       style={{
-                        width: wp( '8%' ), height: wp( '8%' ) 
+                        width: wp( '8%' ), height: wp( '8%' )
                       }}
                     />
                   )}
                   <View style={{
-                    flex: 1, marginLeft: 10 
+                    flex: 1, marginLeft: 10
                   }}>
                     <Text style={styles.dropDownElementTitleText}>
                       {value.accountName}
@@ -1151,7 +1139,7 @@ const VoucherScanner = ( props ) => {
                 {'Already registered with FastBitcoins?'}
               </Text>
               <View style={{
-                flexDirection: 'row' 
+                flexDirection: 'row'
               }}>
                 <Text
                   style={{
@@ -1204,12 +1192,12 @@ const VoucherScanner = ( props ) => {
             <Image
               source={selectedAccount.image}
               style={{
-                width: wp( '8%' ), height: wp( '8%' ) 
+                width: wp( '8%' ), height: wp( '8%' )
               }}
             />
           )}
           <View style={{
-            flex: 1, marginLeft: 10 
+            flex: 1, marginLeft: 10
           }}>
             <Text style={styles.dropDownElementTitleText}>
               {selectedAccount && selectedAccount.accountName
@@ -1238,7 +1226,7 @@ const VoucherScanner = ( props ) => {
             )}
           </View>
           <View style={{
-            justifyContent: 'center', alignItems: 'center' 
+            justifyContent: 'center', alignItems: 'center'
           }}>
             <Entypo
               name={'dots-three-horizontal'}

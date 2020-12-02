@@ -1,6 +1,8 @@
 import axios, { AxiosResponse } from 'axios'
 import bip21 from 'bip21'
 import * as bip32 from 'bip32'
+import * as bip39 from 'bip39'
+import bip65 from 'bip65'
 import Client from 'bitcoin-core'
 import * as bitcoinJS from 'bitcoinjs-lib'
 import config from '../../HexaConfig'
@@ -8,7 +10,7 @@ import { Transactions, ScannedAddressKind } from '../Interface'
 import {
   SUB_PRIMARY_ACCOUNT,
   TRUSTED_CONTACTS,
-} from '../../../common/constants/serviceTypes'
+} from '../../../common/constants/wallet-service-types'
 import { v4 as uuidv4 } from 'uuid'
 
 const { API_URLS, REQUEST_TIMEOUT } = config
@@ -130,33 +132,16 @@ export default class Bitcoin {
         },
       }
 
-      try{
-        if ( this.network === bitcoinJS.networks.testnet ) {
-          res = await bitcoinAxios.post(
-            config.ESPLORA_API_ENDPOINTS.TESTNET.NEWMULTIUTXOTXN,
-            accountToAddressMapping,
-          )
-        } else {
-          res = await bitcoinAxios.post(
-            config.ESPLORA_API_ENDPOINTS.MAINNET.NEWMULTIUTXOTXN,
-            accountToAddressMapping,
-          )
-        }
-      } catch( err ){
-        if( !config.USE_ESPLORA_FALLBACK ) throw new Error( err.message )
-        console.log( 'using BitHyve Node as fallback(fetch-balTx)' )
-
-        if ( this.network === bitcoinJS.networks.testnet ) {
-          res = await bitcoinAxios.post(
-            config.BITHYVE_ESPLORA_API_ENDPOINTS.TESTNET.NEWMULTIUTXOTXN,
-            accountToAddressMapping,
-          )
-        } else {
-          res = await bitcoinAxios.post(
-            config.BITHYVE_ESPLORA_API_ENDPOINTS.MAINNET.NEWMULTIUTXOTXN,
-            accountToAddressMapping,
-          )
-        }
+      if ( this.network === bitcoinJS.networks.testnet ) {
+        res = await bitcoinAxios.post(
+          config.ESPLORA_API_ENDPOINTS.TESTNET.NEWMULTIUTXOTXN,
+          accountToAddressMapping,
+        )
+      } else {
+        res = await bitcoinAxios.post(
+          config.ESPLORA_API_ENDPOINTS.MAINNET.NEWMULTIUTXOTXN,
+          accountToAddressMapping,
+        )
       }
 
       const accountToResponseMapping = res.data
@@ -274,10 +259,9 @@ export default class Bitcoin {
                         .split( ' ' )
                         .map( ( word ) => word[ 0 ].toUpperCase() + word.substring( 1 ) )
                         .join( ' ' )
-                      break
+
                     case SUB_PRIMARY_ACCOUNT:
                       accType = primaryAccType
-                      break
                 }
 
                 const transaction = {
@@ -300,7 +284,7 @@ export default class Bitcoin {
                   primaryAccType,
                   recipientAddresses: tx.RecipientAddresses,
                   senderAddresses: tx.SenderAddresses,
-                  blockTime: tx.Status.block_time? tx.Status.block_time: Date.now(), // only available when tx is confirmed; otherwise set to the current timestamp
+                  blockTime: tx.Status.block_time, // only available when tx is confirmed
                 }
 
                 transactions.transactionDetails.push( transaction )
@@ -715,8 +699,8 @@ export default class Bitcoin {
   ): Promise<{
     txid: string;
   }> => {
-    let res: AxiosResponse
-    try{
+    try {
+      let res: AxiosResponse
       if ( this.network === bitcoinJS.networks.testnet ) {
         res = await bitcoinAxios.post(
           config.ESPLORA_API_ENDPOINTS.TESTNET.BROADCAST_TX,
@@ -741,42 +725,29 @@ export default class Bitcoin {
       return {
         txid: res.data
       }
-    } catch( err ){
-      console.log(
-        `An error occurred while broadcasting via current node. ${err}`,
-      )
-
-      if( config.USE_ESPLORA_FALLBACK ){
-        console.log( 'using BitHyve Node as fallback(tx-broadcast)' )
-        try {
-          if ( this.network === bitcoinJS.networks.testnet ) {
-            res = await bitcoinAxios.post(
-              config.BITHYVE_ESPLORA_API_ENDPOINTS.TESTNET.BROADCAST_TX,
-              txHex,
-              {
-                headers: {
-                  'Content-Type': 'text/plain'
-                },
-              },
-            )
-          } else {
-            res = await bitcoinAxios.post(
-              config.BITHYVE_ESPLORA_API_ENDPOINTS.MAINNET.BROADCAST_TX,
-              txHex,
-              {
-                headers: {
-                  'Content-Type': 'text/plain'
-                },
-              },
-            )
-          }
-          return {
-            txid: res.data
-          }
-        } catch ( err ) {
-        // console.log(err.message);
-          throw new Error( 'Transaction broadcasting failed' )
+    } catch ( err ) {
+      // console.log(
+      //  `An error occurred while broadcasting through BitHyve Node. Using the fallback mechanism. ${err}`,
+      //);
+      try {
+        let res: AxiosResponse
+        if ( this.network === bitcoinJS.networks.testnet ) {
+          res = await bitcoinAxios.post( TESTNET.BROADCAST, {
+            hex: txHex
+          } )
+        } else {
+          res = await bitcoinAxios.post( MAINNET.BROADCAST, {
+            hex: txHex
+          } )
         }
+
+        const { txid } = res.data
+        return {
+          txid,
+        }
+      } catch ( err ) {
+        // console.log(err.message);
+        throw new Error( 'Transaction broadcasting failed' )
       }
     }
   };
@@ -847,7 +818,6 @@ export default class Bitcoin {
 
     outputs.forEach( ( output ) => {
       if ( !output.addresses && !output.scriptpubkey_address ) {
-        // skip
       } else {
         const address = output.addresses
           ? output.addresses[ 0 ]

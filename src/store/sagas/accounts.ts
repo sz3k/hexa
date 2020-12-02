@@ -54,8 +54,6 @@ import {
   FETCH_FEE_AND_EXCHANGE_RATES,
   exchangeRatesCalculated,
   setAverageTxFee,
-  VALIDATE_TWO_FA,
-  twoFAValid,
 } from '../actions/accounts'
 import {
   TEST_ACCOUNT,
@@ -63,25 +61,24 @@ import {
   SECURE_ACCOUNT,
   TRUSTED_CONTACTS,
   DONATION_ACCOUNT,
-} from '../../common/constants/serviceTypes'
-import RegularAccount from '../../bitcoin/services/accounts/RegularAccount'
-import SecureAccount from '../../bitcoin/services/accounts/SecureAccount'
-import { insertDBWorker } from './storage'
-import config from '../../bitcoin/HexaConfig'
-import TestAccount from '../../bitcoin/services/accounts/TestAccount'
+} from '../../common/constants/wallet-service-types'
 import {
   DerivativeAccountTypes,
   TrustedContactDerivativeAccountElements,
 } from '../../bitcoin/utilities/Interface'
 import TrustedContactsService from '../../bitcoin/services/TrustedContactsService'
 import { setAutoAccountSync, startupSyncLoaded } from '../actions/loaders'
-import SubAccountDescribing, { ExternalServiceSubAccountDescribing } from '../../common/data/models/SubAccountInfo/Interfaces'
+import SubAccountDescribing from '../../common/data/models/SubAccountInfo/Interfaces'
 import AccountShell from '../../common/data/models/AccountShell'
 import BitcoinUnit from '../../common/data/enums/BitcoinUnit'
 import SubAccountKind from '../../common/data/enums/SubAccountKind'
 import RelayServices from '../../bitcoin/services/RelayService'
-import { AccountsState } from '../reducers/accounts'
-import ServiceAccountKind from '../../common/data/enums/ServiceAccountKind'
+import RegularAccount from '../../bitcoin/services/accounts/RegularAccount'
+import SecureAccount from '../../bitcoin/services/accounts/SecureAccount'
+import { insertDBWorker } from './storage'
+import config from '../../bitcoin/HexaConfig'
+import TestAccount from '../../bitcoin/services/accounts/TestAccount'
+
 
 function* fetchDerivativeAccXpubWorker( { payload } ) {
   const { accountType, accountNumber } = payload
@@ -293,17 +290,15 @@ export const fetchBalanceTxWatcher = createWatcher(
 )
 
 function* fetchDerivativeAccBalanceTxWorker( { payload } ) {
-  console.log( 'fetchDerivativeAccBalanceTxWorker ', payload )
   let { serviceType, accountNumber, accountType } = payload
   yield put( switchLoader( serviceType, 'derivativeBalanceTx' ) )
-  if( accountType=='SERVICE' ) accountType='WYRE'
+
   const service = yield select( ( state ) => state.accounts[ serviceType ].service )
 
   if ( !accountNumber ) accountNumber = 1
 
   const { derivativeAccounts } =
     serviceType === SECURE_ACCOUNT ? service.secureHDWallet : service.hdWallet
-
   if (
     !derivativeAccounts[ accountType ] ||
     !derivativeAccounts[ accountType ][ accountNumber ].xpub
@@ -482,15 +477,22 @@ export const processRecipients = async(
       accountNumber?: number;
     }
   ],
-  serviceType: string,
-  accounts: AccountsState,
-  trustedContactsServices: TrustedContactsService
-)  => {
+  serviceType: string
+) {
   const addressedRecipients = []
-  const testAccount: TestAccount = accounts[ TEST_ACCOUNT ].service
-  const regularAccount: RegularAccount = accounts[ REGULAR_ACCOUNT ].service
-  const secureAccount: SecureAccount = accounts[ SECURE_ACCOUNT ].service
+  const testAccount: TestAccount = yield select(
+    ( state ) => state.accounts[ TEST_ACCOUNT ].service
+  )
+  const regularAccount: RegularAccount = yield select(
+    ( state ) => state.accounts[ REGULAR_ACCOUNT ].service
+  )
+  const secureAccount: SecureAccount = yield select(
+    ( state ) => state.accounts[ SECURE_ACCOUNT ].service
+  )
 
+  const trustedContactsServices: TrustedContactsService = yield select(
+    ( state ) => state.trustedContacts.service
+  )
   for ( const recipient of recipients ) {
     if ( recipient.address ) addressedRecipients.push( recipient )
     // recipient: explicit address
@@ -537,10 +539,12 @@ export const processRecipients = async(
 
           if ( serviceType !== TEST_ACCOUNT ) {
             if ( contactDetails && contactDetails.xpub ) {
-              res = await
-              regularAccount.getDerivativeAccAddress( TRUSTED_CONTACTS,
+              res = yield call(
+                regularAccount.getDerivativeAccAddress,
+                TRUSTED_CONTACTS,
                 null,
-                contactName )
+                contactName
+              )
             } else {
               const { trustedAddress, } = trustedContactsServices.tc.trustedContacts[
                 contactName.toLowerCase().trim()
@@ -556,7 +560,10 @@ export const processRecipients = async(
             }
           } else {
             if ( contactDetails && contactDetails.tpub ) {
-              res = await testAccount.deriveReceivingAddress( contactDetails.tpub )
+              res = yield call(
+                testAccount.deriveReceivingAddress,
+                contactDetails.tpub
+              )
             } else {
               const { trustedTestAddress, } = trustedContactsServices.tc.trustedContacts[
                 contactName.toLowerCase().trim()
@@ -605,17 +612,8 @@ function* transferST1Worker( { payload } ) {
     recipients
   } )
 
-  const accounts: AccountsState = yield select(
-    ( state ) => state.accounts
-  )
-
-  const trustedContactsServices: TrustedContactsService =
-  yield select(
-    ( state ) => state.trustedContacts.service
-  )
-
   try {
-    recipients = yield call( processRecipients, recipients, payload.serviceType, accounts, trustedContactsServices )
+    recipients = yield call( processRecipients, recipients, payload.serviceType )
   } catch ( err ) {
     yield put( failedST1( payload.serviceType, {
       err
@@ -625,8 +623,9 @@ function* transferST1Worker( { payload } ) {
   console.log( {
     recipients
   } )
-  const service = accounts[ payload.serviceType ].service
-
+  const service = yield select(
+    ( state ) => state.accounts[ payload.serviceType ].service
+  )
   const res = yield call(
     service.transferST1,
     recipients,
@@ -662,10 +661,8 @@ function* transferST2Worker( { payload } ) {
     ( state ) => state.accounts[ serviceType ]
   )
 
-  const { txPrerequisites } = transfer.stage1? transfer.stage1: {
-    txPrerequisites: null
-  }
-  if ( !txPrerequisites && !customTxPrerequisites ) {
+  const { txPrerequisites } = transfer.stage1
+  if ( !txPrerequisites ) {
     console.log( 'Transaction prerequisites missing' )
     return
   }
@@ -897,8 +894,7 @@ function* feeAndExchangeRatesWorker() {
     if ( res.status === 200 ) {
       const { exchangeRates, averageTxFees } = res.data
 
-      if ( !exchangeRates ) yield put( exchangeRatesCalculated( {
-      } ) )
+      if ( !exchangeRates ) console.log( 'Failed to fetch exchange rates' )
       else {
         if (
           JSON.stringify( exchangeRates ) !== JSON.stringify( storedExchangeRates )
@@ -943,46 +939,6 @@ function* resetTwoFAWorker( { payload } ) {
 }
 
 export const resetTwoFAWatcher = createWatcher( resetTwoFAWorker, RESET_TWO_FA )
-
-
-function* validateTwoFAWorker( { payload } ) {
-  const service: SecureAccount = yield select(
-    ( state ) => state.accounts[ SECURE_ACCOUNT ].service
-  )
-
-  const res = yield call( service.validate2FASetup, payload.token )
-
-  if ( res.status == 200 && res.data.valid ) {
-    yield put( twoFAValid( true ) )
-    const { removed } = yield call( service.removeTwoFADetails )
-
-    if( removed ){
-      const { SERVICES } = yield select( ( state ) => state.storage.database )
-      const updatedSERVICES = {
-        ...SERVICES,
-        [ SECURE_ACCOUNT ]: JSON.stringify( service ),
-      }
-
-      yield call( insertDBWorker, {
-        payload: {
-          SERVICES: updatedSERVICES
-        }
-      } )
-    } else {
-      console.log( 'Failed to remove 2FA details from the device' )
-    }
-
-  } else {
-    if ( res.err === 'ECONNABORTED' ) requestTimedout()
-    console.log( 'Failed to validate twoFA', res.err )
-    yield put( twoFAValid( false ) )
-  }
-}
-
-export const validateTwoFAWatcher = createWatcher(
-  validateTwoFAWorker,
-  VALIDATE_TWO_FA
-)
 
 function* removeTwoFAWorker() {
   const service: SecureAccount = yield select(
@@ -1247,22 +1203,13 @@ function* refreshAccountShellWorker( { payload } ) {
   const { primarySubAccount } = shell
   const options: { autoSync?: boolean } = payload.options
 
-  let accountKind
-  switch( primarySubAccount.kind ){
-      case SubAccountKind.REGULAR_ACCOUNT:
-      case SubAccountKind.SECURE_ACCOUNT:
-        if ( primarySubAccount.instanceNumber )
-          accountKind = DerivativeAccountTypes.SUB_PRIMARY_ACCOUNT
-        else accountKind = primarySubAccount.kind
-        break
-
-      case SubAccountKind.SERVICE:
-        accountKind = ( primarySubAccount as ExternalServiceSubAccountDescribing ).serviceAccountKind
-        break
-
-      default:
-        accountKind = primarySubAccount.kind
-  }
+  let accountKind: any = primarySubAccount.kind
+  if (
+    primarySubAccount.kind === SubAccountKind.REGULAR_ACCOUNT ||
+    primarySubAccount.kind === SubAccountKind.SECURE_ACCOUNT
+  )
+    if ( primarySubAccount.instanceNumber )
+      accountKind = DerivativeAccountTypes.SUB_PRIMARY_ACCOUNT
 
   if ( options && options.autoSync ) {
     // auto-refresh the account-shell once per-session
@@ -1340,11 +1287,6 @@ export const refreshAccountShellWatcher = createWatcher(
 function* addNewSubAccount( subAccountInfo: SubAccountDescribing ) {
   let subAccountId: string
   let subAccountInstanceNum: number
-
-  const service = yield select(
-    ( state ) => state.accounts[ subAccountInfo.sourceKind ].service
-  )
-
   switch ( subAccountInfo.kind ) {
       case SubAccountKind.DONATION_ACCOUNT:
         const donationInstance = yield call( setupDonationAccountWorker, {
@@ -1367,6 +1309,10 @@ function* addNewSubAccount( subAccountInfo: SubAccountDescribing ) {
 
       case SubAccountKind.REGULAR_ACCOUNT:
       case SubAccountKind.SECURE_ACCOUNT:
+        const service = yield select(
+          ( state ) => state.accounts[ subAccountInfo.kind ].service
+        )
+
         const accountDetails = {
           accountName: subAccountInfo.customDisplayName,
           accountDescription: subAccountInfo.customDescription,
@@ -1395,42 +1341,6 @@ function* addNewSubAccount( subAccountInfo: SubAccountDescribing ) {
           err: derivativeSetupRes.err
         } )
         break
-
-      case SubAccountKind.SERVICE:
-        switch( ( subAccountInfo as ExternalServiceSubAccountDescribing ).serviceAccountKind ){
-            case ServiceAccountKind.WYRE:
-              const wyreAccountDetails = {
-                accountName: subAccountInfo.customDisplayName,
-                accountDescription: subAccountInfo.customDescription,
-              }
-              const wyreSetupRes = yield call(
-                service.setupDerivativeAccount,
-                DerivativeAccountTypes.WYRE,
-                wyreAccountDetails
-              )
-
-              if ( wyreSetupRes.status === 200 ) {
-                const { SERVICES } = yield select( ( state ) => state.storage.database )
-                const updatedSERVICES = {
-                  ...SERVICES,
-                  [ subAccountInfo.sourceKind ]: JSON.stringify( service ),
-                }
-                yield call( insertDBWorker, {
-                  payload: {
-                    SERVICES: updatedSERVICES
-                  }
-                } )
-
-                subAccountId = wyreSetupRes.data.accountId
-                subAccountInstanceNum = wyreSetupRes.data.accountNumber
-              } else {
-                console.log( {
-                  err: wyreSetupRes.err
-                } )
-              }
-              break
-        }
-        break
   }
 
   if ( subAccountId ) return {
@@ -1442,7 +1352,6 @@ function* addNewSubAccount( subAccountInfo: SubAccountDescribing ) {
 function* addNewAccountShell( { payload: subAccountInfo, }: {
   payload: SubAccountDescribing;
 } ) {
-
   const bitcoinUnit =
     subAccountInfo.kind == SubAccountKind.TEST_ACCOUNT
       ? BitcoinUnit.TSATS
@@ -1465,7 +1374,7 @@ function* addNewAccountShell( { payload: subAccountInfo, }: {
     } ) )
     yield put( accountShellOrderedToFront( newAccountShell ) )
   } catch ( error ) {
-
+    console.log( 'addNewAccountShell saga::error: ' + error )
     const newAccountShell = new AccountShell( {
       unit: bitcoinUnit,
       primarySubAccount: subAccountInfo,
@@ -1488,39 +1397,11 @@ function* updateAccountSettings( { payload: account, }: {
   payload: SubAccountDescribing;
 } ) {
   try {
-    const service = yield select(
-      ( state ) => state.accounts[ account.sourceKind ].service
-    )
-
-    const result = yield call(
-      service.updateAccountDetails,
-      {
-        // for accounts of subAccountKind as SERVICE we need to know which specific
-        // service the account belongs to, this is serviceAccountKind of ExternalServiceSubAccountDescribing
-        kind: account.kind===SubAccountKind.SERVICE ? ( ( account as ExternalServiceSubAccountDescribing ).serviceAccountKind ) : account.kind,
-        instanceNumber: account.instanceNumber,
-        customDisplayName :account.customDisplayName,
-        customDescription: account.customDescription
-      }
-    )
-
-    if ( result.status === 200 ) {
-      const { SERVICES } = yield select( ( state ) => state.storage.database )
-      const updatedSERVICES = {
-        ...SERVICES,
-        [ account.sourceKind ]: JSON.stringify( service ),
-      }
-      yield call( insertDBWorker, {
-        payload: {
-          SERVICES: updatedSERVICES
-        }
-      } )
-
-      yield put( accountSettingsUpdated( {
-        account
-      } ) )
-    }
-  }catch ( error ) {
+    // TODO: Implement backend logic here for saving an account's properties
+    yield put( accountSettingsUpdated( {
+      account
+    } ) )
+  } catch ( error ) {
     yield put( accountSettingsUpdateFailed( {
       account, error
     } ) )

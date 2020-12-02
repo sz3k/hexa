@@ -21,9 +21,7 @@ import {
   TRUSTED_CONTACTS,
   DONATION_ACCOUNT,
   SUB_PRIMARY_ACCOUNT,
-  SECURE_ACCOUNT,
-  WYRE,
-} from '../../../common/constants/serviceTypes'
+} from '../../../common/constants/wallet-service-types'
 import { SIGNING_AXIOS, BH_AXIOS } from '../../../services/api'
 
 const {  HEXA_ID, REQUEST_TIMEOUT } = config

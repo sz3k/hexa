@@ -6,17 +6,13 @@ import {
   DerivativeAccount,
   DerivativeAccountTypes,
   DonationDerivativeAccount,
-  SubPrimaryDerivativeAccount,
-  SubPrimaryDerivativeAccountElements,
-  WyreDerivativeAccount,
-  WyreDerivativeAccountElements,
 } from '../../bitcoin/utilities/Interface'
 import {
   DONATION_ACCOUNT,
   REGULAR_ACCOUNT,
   SECURE_ACCOUNT,
   TEST_ACCOUNT,
-} from '../../common/constants/serviceTypes'
+} from '../../common/constants/wallet-service-types'
 import BitcoinUnit from '../../common/data/enums/BitcoinUnit'
 import SubAccountKind from '../../common/data/enums/SubAccountKind'
 import AccountShell from '../../common/data/models/AccountShell'
@@ -28,7 +24,7 @@ import TransactionDescribing from '../../common/data/models/Transactions/Interfa
 import config from '../../bitcoin/HexaConfig'
 import ExternalServiceSubAccountInfo from '../../common/data/models/SubAccountInfo/ExternalServiceSubAccountInfo'
 import ServiceAccountKind from '../../common/data/enums/ServiceAccountKind'
-import SubAccountDescribing, { ExternalServiceSubAccountDescribing } from '../../common/data/models/SubAccountInfo/Interfaces'
+import SubAccountDescribing from '../../common/data/models/SubAccountInfo/Interfaces'
 import SourceAccountKind from '../../common/data/enums/SourceAccountKind'
 import DonationSubAccountInfo from '../../common/data/models/SubAccountInfo/DonationSubAccountInfo'
 
@@ -149,8 +145,6 @@ const updatePrimarySubAccounts = (
   const secureAcc: SecureAccount = services[ SECURE_ACCOUNT ]
 
   const updatedAccountShells = accountShells.map( ( shell: AccountShell ) => {
-    let accountName = ''
-    let accountDescription = ''
     let balances: Balances = {
       confirmed: 0,
       unconfirmed: 0,
@@ -159,8 +153,6 @@ const updatePrimarySubAccounts = (
 
     switch ( shell.primarySubAccount.kind ) {
         case SubAccountKind.TEST_ACCOUNT:
-          accountName = testAcc.hdWallet.accountName
-          accountDescription = testAcc.hdWallet.accountDescription
           transactions = testAcc.hdWallet.transactions.transactionDetails
           balances = {
             confirmed: transactions.length
@@ -172,8 +164,6 @@ const updatePrimarySubAccounts = (
 
         case SubAccountKind.REGULAR_ACCOUNT:
           if ( !shell.primarySubAccount.instanceNumber ) {
-            accountName = regularAcc.hdWallet.accountName
-            accountDescription = regularAcc.hdWallet.accountDescription
             balances = {
               confirmed: regularAcc.hdWallet.balances.balance,
               unconfirmed: regularAcc.hdWallet.balances.unconfirmedBalance,
@@ -185,12 +175,10 @@ const updatePrimarySubAccounts = (
               DerivativeAccountTypes.SUB_PRIMARY_ACCOUNT
             ]
 
-            const subPrimInstance: SubPrimaryDerivativeAccountElements =
+            const subPrimInstance =
             subPrimaryAccounts[ shell.primarySubAccount.instanceNumber ]
 
             if ( subPrimInstance && subPrimInstance.balances ) {
-              accountName = subPrimInstance.accountName
-              accountDescription = subPrimInstance.accountDescription  
               balances = {
                 confirmed: subPrimInstance.balances.balance,
                 unconfirmed: subPrimInstance.balances.unconfirmedBalance,
@@ -203,8 +191,6 @@ const updatePrimarySubAccounts = (
 
         case SubAccountKind.SECURE_ACCOUNT:
           if ( !shell.primarySubAccount.instanceNumber ) {
-            accountName = secureAcc.secureHDWallet.accountName
-            accountDescription = secureAcc.secureHDWallet.accountDescription
             balances = {
               confirmed: secureAcc.secureHDWallet.balances.balance,
               unconfirmed: secureAcc.secureHDWallet.balances.unconfirmedBalance,
@@ -212,17 +198,15 @@ const updatePrimarySubAccounts = (
             transactions =
             secureAcc.secureHDWallet.transactions.transactionDetails
           } else {
-            const subPrimaryAccounts: SubPrimaryDerivativeAccount =
+            const subPrimaryAccounts: DerivativeAccount =
             secureAcc.secureHDWallet.derivativeAccounts[
               DerivativeAccountTypes.SUB_PRIMARY_ACCOUNT
             ]
 
-            const subPrimInstance: SubPrimaryDerivativeAccountElements =
+            const subPrimInstance =
             subPrimaryAccounts[ shell.primarySubAccount.instanceNumber ]
 
             if ( subPrimInstance && subPrimInstance.balances ) {
-              accountName = subPrimInstance.accountName
-              accountDescription = subPrimInstance.accountDescription  
               balances = {
                 confirmed: subPrimInstance.balances.balance,
                 unconfirmed: subPrimInstance.balances.unconfirmedBalance,
@@ -250,45 +234,13 @@ const updatePrimarySubAccounts = (
           const donationInstance = donationAccounts[ instanceNumber ]
 
           if ( donationInstance && donationInstance.balances ) {
-            accountName = donationInstance.subject
-            accountDescription = donationInstance.description 
             balances = {
               confirmed: donationInstance.balances.balance,
               unconfirmed: donationInstance.balances.unconfirmedBalance,
             }
             transactions = donationInstance.transactions.transactionDetails
           }
-          break
 
-        case SubAccountKind.SERVICE:
-          switch( ( shell.primarySubAccount as ExternalServiceSubAccountDescribing ).serviceAccountKind ){
-              case ServiceAccountKind.WYRE:
-                const { sourceKind, instanceNumber } = shell.primarySubAccount
-                let derivativeAccounts
-                switch ( sourceKind ) {
-                    case SourceAccountKind.REGULAR_ACCOUNT:
-                      derivativeAccounts = regularAcc.hdWallet.derivativeAccounts
-                      break
-      
-                    case SourceAccountKind.SECURE_ACCOUNT:
-                      derivativeAccounts = secureAcc.secureHDWallet.derivativeAccounts
-                      break
-                }
-                const wyreAccounts: WyreDerivativeAccount =
-                derivativeAccounts[ DerivativeAccountTypes.WYRE ]
-                const wyreInstance: WyreDerivativeAccountElements = wyreAccounts[ instanceNumber ]
-      
-                if ( wyreInstance && wyreInstance.balances ) {
-                  accountName = wyreInstance.accountName
-                  accountDescription = wyreInstance.accountDescription
-                  balances = {
-                    confirmed: wyreInstance.balances.balance,
-                    unconfirmed: wyreInstance.balances.unconfirmedBalance,
-                  }
-                  transactions = wyreInstance.transactions.transactionDetails
-                }
-                break
-          }
           break
     }
 
@@ -368,6 +320,7 @@ const updateSecondarySubAccounts = (
               dervTransactions,
             )
           } else {
+            // backward compatibiliy for versions < 1.4.0 (adding the sub-account)
             let secondarySubAccount: SubAccountDescribing
             switch ( dAccountType ) {
                 case DerivativeAccountTypes.TRUSTED_CONTACTS:
