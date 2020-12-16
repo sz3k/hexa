@@ -37,11 +37,13 @@ import useAccountsState from '../../../utils/hooks/state-selectors/accounts/UseA
 import { Button } from 'react-native-elements'
 import DonationWebPageBottomSheet from '../../../components/bottom-sheets/DonationWebPageBottomSheet'
 import { DONATION_ACCOUNT } from '../../../common/constants/wallet-service-types'
+import { sourceAccountSelectedForSending } from '../../../store/actions/sending'
 
 export type Props = {
   navigation: any;
 };
 
+<<<<<<< HEAD
 
 enum SectionKind {
   ACCOUNT_CARD,
@@ -52,6 +54,8 @@ enum SectionKind {
 const sectionListItemKeyExtractor = ( index ) => String( index )
 
 
+=======
+>>>>>>> cc37b590... rough drafting
 const AccountDetailsContainerScreen: React.FC<Props> = ( { navigation } ) => {
   const dispatch = useDispatch()
 
@@ -63,6 +67,7 @@ const AccountDetailsContainerScreen: React.FC<Props> = ( { navigation } ) => {
   const accountsState = useAccountsState()
   const primarySubAccount = usePrimarySubAccountForShell( accountShell )
   const accountTransactions = AccountShell.getAllTransactions( accountShell )
+<<<<<<< HEAD
   const { averageTxFees, exchangeRates } = accountsState
 
   let derivativeAccountKind
@@ -80,6 +85,19 @@ const AccountDetailsContainerScreen: React.FC<Props> = ( { navigation } ) => {
 
       default:
         derivativeAccountKind = primarySubAccount.kind
+=======
+  const spendableBalance = useSpendableBalanceForAccountShell( accountShell )
+  const { averageTxFees, exchangeRates } = accountsState
+  let derivativeAccountKind: any = primarySubAccount.kind
+
+  if (
+    primarySubAccount.kind === SubAccountKind.REGULAR_ACCOUNT ||
+    primarySubAccount.kind === SubAccountKind.SECURE_ACCOUNT
+  ) {
+    if ( primarySubAccount.instanceNumber ) {
+      derivativeAccountKind = DerivativeAccountTypes.SUB_PRIMARY_ACCOUNT
+    }
+>>>>>>> cc37b590... rough drafting
   }
 
   const derivativeAccountDetails: {
@@ -91,14 +109,21 @@ const AccountDetailsContainerScreen: React.FC<Props> = ( { navigation } ) => {
       number: primarySubAccount.instanceNumber,
     }
     : null
+<<<<<<< HEAD
+=======
+
+>>>>>>> cc37b590... rough drafting
 
   const isRefreshing = useMemo( () => {
     return accountShell.isSyncInProgress
   }, [ accountShell.isSyncInProgress ] )
+<<<<<<< HEAD
 
   const isShowingDonationButton = useMemo( () => {
     return primarySubAccount.kind === SubAccountKind.DONATION_ACCOUNT
   }, [ primarySubAccount.kind ] )
+=======
+>>>>>>> cc37b590... rough drafting
 
   const {
     present: presentBottomSheet,
@@ -247,6 +272,7 @@ const AccountDetailsContainerScreen: React.FC<Props> = ( { navigation } ) => {
       },
     )
   }, [ presentBottomSheet, dismissBottomSheet ] )
+<<<<<<< HEAD
 
   useEffect( ()=>{
     // Initiate 2FA setup flow(for savings and corresponding derivative accounts) unless setup is successfully completed
@@ -272,6 +298,16 @@ const AccountDetailsContainerScreen: React.FC<Props> = ( { navigation } ) => {
     }, 100 )
   }, [] )
 
+=======
+
+  useEffect( () => {
+    dispatch( refreshAccountShell( accountShell, {
+      autoSync: true
+    } ) )
+  }, [] )
+
+
+>>>>>>> cc37b590... rough drafting
   useEffect( () => {
     // missing fee & exchange rates patch(restore & upgrade)
     if (
