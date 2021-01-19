@@ -316,6 +316,8 @@ PODS:
     - react-native-video/Video (= 4.4.5)
   - react-native-video/Video (4.4.5):
     - React
+  - react-native-webview (11.0.3):
+    - React-Core
   - React-RCTActionSheet (0.63.3):
     - React-Core/RCTActionSheetHeaders (= 0.63.3)
   - React-RCTAnimation (0.63.3):
@@ -474,6 +476,7 @@ DEPENDENCIES:
   - react-native-sqlite-storage (from `../node_modules/react-native-sqlite-storage`)
   - react-native-udp (from `../node_modules/react-native-udp`)
   - react-native-video (from `../node_modules/react-native-video`)
+  - react-native-webview (from `../node_modules/react-native-webview`)
   - React-RCTActionSheet (from `../node_modules/react-native/Libraries/ActionSheetIOS`)
   - React-RCTAnimation (from `../node_modules/react-native/Libraries/NativeAnimation`)
   - React-RCTBlob (from `../node_modules/react-native/Libraries/Blob`)
@@ -605,6 +608,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-udp"
   react-native-video:
     :path: "../node_modules/react-native-video"
+  react-native-webview:
+    :path: "../node_modules/react-native-webview"
   React-RCTActionSheet:
     :path: "../node_modules/react-native/Libraries/ActionSheetIOS"
   React-RCTAnimation:
@@ -733,6 +738,7 @@ SPEC CHECKSUMS:
   react-native-sqlite-storage: 418ef4afc5e6df6ce3574c4617e5f0b65cffde55
   react-native-udp: ff9d13e523f2b58e6bc5d4d32321ac60671b5dc9
   react-native-video: eee541262ada11bc7ffe8ec5508e6a877937c462
+  react-native-webview: 21fdfbdd5a2268195ca013174f8f656f3509de50
   React-RCTActionSheet: 53ea72699698b0b47a6421cb1c8b4ab215a774aa
   React-RCTAnimation: 1befece0b5183c22ae01b966f5583f42e69a83c2
   React-RCTBlob: 0b284339cbe4b15705a05e2313a51c6d8b51fa40
@@ -773,4 +779,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 579ac7919977593ab0196f9f26d3bc979b90364a
 
-COCOAPODS: 1.8.4
+COCOAPODS: 1.9.3

@@ -1,4 +1,3 @@
-import { Satoshis } from '../../common/data/typealiases/UnitAliases'
 import {
   FETCH_WYRE_RESERVATION_SUCCEEDED,
   CLEAR_WYRE_CACHE,
