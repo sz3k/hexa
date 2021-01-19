@@ -4,7 +4,7 @@ import * as bip32 from 'bip32'
 import Client from 'bitcoin-core'
 import * as bitcoinJS from 'bitcoinjs-lib'
 import config from '../../HexaConfig'
-import { Transactions } from '../Interface'
+import { TransactionDetails, Transactions } from '../Interface'
 import {
   SUB_PRIMARY_ACCOUNT,
   TRUSTED_CONTACTS,
@@ -111,6 +111,10 @@ export default class Bitcoin {
     }>,
     cachedTxs: Transactions,
     cachedTxIdMap: {[txid: string]: boolean},
+    addressQueryList: {
+      external: string[];
+      internal: string[];
+    },
     lastUsedAddressIndex: number,
     lastUsedChangeAddressIndex: number,
     accountType: string,
@@ -127,6 +131,10 @@ export default class Bitcoin {
     balances: { balance: number; unconfirmedBalance: number };
     txIdMap:  {[txid: string]: boolean},
     transactions: Transactions;
+    addressQueryList: {
+      external: string[];
+      internal: string[];
+    },
     nextFreeAddressIndex: number;
     nextFreeChangeAddressIndex: number;
   }> => {
@@ -212,9 +220,9 @@ export default class Bitcoin {
         else balances.unconfirmedBalance += utxo.value
       }
 
-      const upToDateTxs = []
-      const txsToUpdate = []
-      const newTxs = []
+      const upToDateTxs: TransactionDetails[] = []
+      const txsToUpdate: TransactionDetails[] = []
+      const newTxs : TransactionDetails[ ]= []
       cachedTxs.transactionDetails.forEach( ( tx ) => {
         if( tx.confirmations <= 6 ){
           txsToUpdate.push( tx )
@@ -362,11 +370,17 @@ export default class Bitcoin {
         transactionDetails: [ ...newTxs, ...txsToUpdate, ...upToDateTxs ]
       }
 
+
+      // update(pop) the query list
+      const nonConfirmedTxs = [ ...newTxs, ...txsToUpdate ] // txs <= 6 confs
+      const updatedQL = this.syncQueryList( addressQueryList, nonConfirmedTxs )
+
       return {
         UTXOs,
         balances,
         txIdMap,
         transactions,
+        addressQueryList: updatedQL,
         nextFreeAddressIndex: lastUsedAddressIndex + 1,
         nextFreeChangeAddressIndex: lastUsedChangeAddressIndex + 1,
       }
@@ -915,6 +929,39 @@ export default class Bitcoin {
     tx.accountType = accountType
     return tx
   };
+
+
+  public syncQueryList  = ( addressQueryList: {
+    external: string[];
+    internal: string[];
+  }, nonConfirmedTxs: TransactionDetails[] ) => {
+    // pop addresses from the query list based on tx confs
+
+    const updatedQueryList = {
+      external: [],
+      internal: []
+    }
+    for( const tx of nonConfirmedTxs ){
+      let inserted = false
+      for( const extAddr of addressQueryList.external ){
+        if( extAddr === tx.address && tx.confirmations <= 6 ){
+          updatedQueryList.external.push( extAddr )
+          inserted = true
+          break
+        }
+      }
+
+      if( !inserted )
+        for( const intAddr of addressQueryList.internal ){
+          if( intAddr === tx.address && tx.confirmations <= 6 ){
+            updatedQueryList.internal.push( intAddr )
+            break
+          }
+        }
+    }
+
+    return updatedQueryList
+  }
 
   // private ownedAddress = (
   //   address: string,
